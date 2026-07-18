@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌾 GF Ledger
 
-## Getting Started
+A mobile-first PWA that turns grocery receipts into a celiac tax-deduction audit trail.
 
-First, run the development server:
+People with physician-diagnosed celiac disease can deduct the **extra** cost of gluten-free food as a medical expense — the difference between what a gluten-free item costs and what the comparable conventional item costs (and the full price of items that only exist for a GF diet, like xanthan gum). Tracking that by hand is miserable. GF Ledger does it from a photo.
+
+## How it works
+
+1. **Snap a receipt** — Claude (vision) reads every line item, expands cryptic receipt abbreviations (`GF BRD UDIS` → *Udi's Gluten Free Bread*), and flags the gluten-free products.
+2. **Price the counterpart** — for each GF item, the Kroger API finds the cheapest comparable conventional product at your local Kroger-family store.
+3. **Review & save** — confirm or fix every flag, match, and price in ~30 seconds. The original photo is stored as audit evidence.
+4. **Report** — monthly/yearly dashboard, printable annual PDF report, and CSV export for your accountant.
+
+## Stack
+
+- **Next.js 16** (App Router, TypeScript, Tailwind CSS 4), installable PWA
+- **Supabase** — auth, Postgres (`gf_` tables with RLS), private storage bucket for receipt photos
+- **Claude API** (`@anthropic-ai/sdk`) — one vision call per receipt with structured (Zod-validated) output
+- **Kroger Public API** — real shelf prices by store location (client-credentials flow, `product.compact` scope)
+
+## Running it
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Required env vars (`.env.local`):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Var | Where to get it |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase project settings |
+| `ANTHROPIC_API_KEY` | [platform.claude.com](https://platform.claude.com/settings/keys) |
+| `KROGER_CLIENT_ID` / `KROGER_CLIENT_SECRET` | Free app at [developer.kroger.com](https://developer.kroger.com) (Production environment, Products API) |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Database schema lives in Supabase migrations (`gf_receipts`, `gf_receipt_items`, `gf_settings`, plus the private `gf-receipts` storage bucket).
 
-## Learn More
+## Features
 
-To learn more about Next.js, take a look at the following resources:
+- 📷 Camera capture with AI receipt parsing (OCR + GF detection in one call)
+- 🏪 Kroger store picker by zip code; cheapest-match comparison pricing with manual override
+- ✏️ Full review flow — every AI decision is editable before saving
+- 🧾 Receipt photos retained as audit evidence (private bucket, signed URLs)
+- 📊 Monthly/yearly deduction dashboard
+- 🖨 Printable annual report (browser print → PDF) and CSV export
+- 📱 Installable PWA with bottom-tab navigation
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+> **Not tax advice.** Medical-expense deductions require itemizing and only count above 7.5% of AGI — talk to a tax professional.
